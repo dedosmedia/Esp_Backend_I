@@ -88,3 +88,31 @@ Pasos de configuración:
 > ```
 
 4. **Ejecútalo y Listo!** El servidor de configuraciones debería estar activo.
+
+
+
+### Config Client
+Carpeta del repo: **/config-client**
+
+Pasos de configuración:
+1. Agregar las dependencias:
+   - **spring-cloud-starter-config**
+   - spring-boot-starter-web (Opcional)
+   - spring-boot-starter-actuator (Recomendado)
+2. Configurar el cliente mediante las propiedades (application.properties o application.yaml según preferencias) para indicarle de dónde obtener las configuraciones.
+   En este caso le indicamos al Config Client que las tome desde el servidor de configuraciones, pasandole la url. No configuramos el puerto donde se ejecutará porque se configurará dinámicamente desde el yml.
+   Agregamos también el nombre del microservicio, este último es muy importante porque así mismo es el nombre del archivo yml que intentará obtener del servidor de configuraciones.
+   
+   application.yml
+> ```
+> spring:
+>   application:
+>     name: config-client
+>   config:
+>     import: configserver:http://localhost:8891
+> ```
+
+3. Para probar que funcione creamos una clase */controller/TestController.java* anotada con @RestController y estamos sirviendo un enpdoint con @GetMapping("/message").  
+Mediante la anotación @Value("${message}") podemos imprimir dicha variable y confirmar que es el valor configurado en el yml de Github.
+
+4. **Ejecútalo** (Debe estar corriendo Config Server) **y Listo!** El cliente debería estar corriendo y haber tomado la configuración del yml como estaba en Github.
