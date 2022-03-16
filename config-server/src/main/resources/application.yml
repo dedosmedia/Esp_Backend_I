@@ -1,0 +1,12 @@
+server:
+  port: 8891
+
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/dedosmedia/spring-cloud-config-server-configuration
+
