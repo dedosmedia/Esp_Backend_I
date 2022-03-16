@@ -8,7 +8,7 @@ Pasos de configuración:
    - **spring-cloud-starter-netflix-eureka-client**
    - spring-boot-starter-web (Recomendado)
    - spring-boot-starter-actuator (Recomendado)
-2. Configurar nuestra aplicación mediante propiedades (application.properties o application.yaml según preferencias) para que puedad registrarse en el Eureka Server.
+2. Configurar nuestra aplicación mediante propiedades (application.properties o application.yaml según preferencias) para que pueda registrarse en el Eureka Server.
    En este caso le indicamos la dirección donde conectar el Eureka Server. Además configuramos el puerto donde se ejecutará y el nombre que tendrá este microservicio al registrarse.
    
    application.yml
