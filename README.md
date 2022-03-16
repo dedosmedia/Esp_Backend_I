@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 ## Patrón Service Registry/Service Discovery
 
 ### Eureka Server
@@ -90,4 +88,3 @@ Pasos de configuración:
 > ```
 
 4. **Ejecútalo y Listo!** El servidor de configuraciones debería estar activo.
->>>>>>> Stashed changes
