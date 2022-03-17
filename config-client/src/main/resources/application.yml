@@ -3,3 +3,9 @@ spring:
     name: config-client
   config:
     import: configserver:http://localhost:8891
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8888/eureka/
+

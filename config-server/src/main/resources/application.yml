@@ -10,3 +10,7 @@ spring:
         git:
           uri: https://github.com/dedosmedia/spring-cloud-config-server-configuration
 
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8888/eureka/
