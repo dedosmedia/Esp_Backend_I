@@ -2,6 +2,7 @@ package com.dh.feignclient.services;
 
 
 import com.dh.feignclient.clients.MessageClient;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,7 +15,8 @@ public class MessageService {
     }
 
 
-    public String getMessage(){
+    public ResponseEntity<String> getMessage(){
+
         return client.getMessage();
     }
 
