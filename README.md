@@ -157,3 +157,15 @@ Pasos de configuración:
 5. Se ha creado un MessageService donde se inyecta el Cliente. Luego se ha creado un MessageController donde se inyecta el MessageService. Ese controller expone un endpoint /mymessage que internamente usa el cliente de feign para consumir el endpoint de otro microservicio (config-client en este caso)
 6. **Listo!** Ahora este microservicio ya puede consumir el endpoint del otro microservicio del ecosistema sin conocer si quiera su ubicación, unicamente necesitamos el nombre del MS.
 Puedes probar en: http://localhost:9501/mymmesage
+
+
+### Balanceador de carga desde el cliente
+Carpeta del repo: **/feign-client**  (se agrega dentro el load balancer dentro de este MS)
+
+Pasos de configuración:
+1. Agregar las dependencias:
+   - **spring-cloud-starter-loadbalancer**
+2.  Anotar la aplicación con **@EnableDiscoveryClient** para habilitar el balanceo de carga desde este consumidor. (Debería también esar ya anotada con **@EnableFeignClients**)
+3. La app Feign-Client debería consumir un endpoint de otro MS, y si ese MS tiene 2 o más instancias, cada petición que haga Feign-Client debería ser contestada por las diferentes instancias del otro MS. Por defecto Feign usará Round-Robin.
+4. Para personalizar el modo de balancear las cargas creamos una clase /configuration/**CustomLoadBalancerConfiguration.java** y luego anotamos la interface con **@LoadBalancerClient( name="..." configuration=CustomLoadBalancerConfiguration.class)**
+
