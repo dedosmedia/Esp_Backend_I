@@ -1,3 +1,6 @@
+server:
+  port: 5150
+
 spring:
   application:
     name: config-client
