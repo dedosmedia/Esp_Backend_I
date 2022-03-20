@@ -35,7 +35,7 @@ Pasos de configuración:
    - **spring-cloud-starter-netflix-eureka-client**
    - spring-boot-starter-web (Recomendado)
    - spring-boot-starter-actuator (Recomendado)
-2. Agregar la anotación a nuestra clase principal **@EnableDiscoveryClient**  (equivalente de **@EnableEurekaClient**)
+2. Agregar la anotación a nuestra clase principal **@EnableDiscoveryClient** que permite descubrir los clientes sin importar que implementación de Service Registry haya (Consult, Zookeeper, Eureka) (Hay otro equivalente que es **@EnableEurekaClient** pero esta solo funcionaría para descubrir servicios desde Eureka)
 3. Configurar nuestra aplicación mediante propiedades (application.properties o application.yaml según preferencias) para que pueda registrarse en el Eureka Server.
    En este caso le indicamos la dirección donde conectar el Eureka Server. Además configuramos el puerto donde se ejecutará y el nombre que tendrá este microservicio al registrarse.
    
