@@ -35,7 +35,8 @@ Pasos de configuración:
    - **spring-cloud-starter-netflix-eureka-client**
    - spring-boot-starter-web (Recomendado)
    - spring-boot-starter-actuator (Recomendado)
-2. Configurar nuestra aplicación mediante propiedades (application.properties o application.yaml según preferencias) para que pueda registrarse en el Eureka Server.
+2. Agregar la anotación a nuestra clase principal **@EnableDiscoveryClient**  (equivalente de **@EnableEurekaClient**)
+3. Configurar nuestra aplicación mediante propiedades (application.properties o application.yaml según preferencias) para que pueda registrarse en el Eureka Server.
    En este caso le indicamos la dirección donde conectar el Eureka Server. Además configuramos el puerto donde se ejecutará y el nombre que tendrá este microservicio al registrarse.
    
    application.yml
@@ -169,3 +170,18 @@ Pasos de configuración:
 3. La app Feign-Client debería consumir un endpoint de otro MS, y si ese MS tiene 2 o más instancias, cada petición que haga Feign-Client debería ser contestada por las diferentes instancias del otro MS. Por defecto Feign usará Round-Robin.
 4. Para personalizar el modo de balancear las cargas creamos una clase /configuration/**CustomLoadBalancerConfiguration.java** y luego anotamos la interface con **@LoadBalancerClient( name="..." configuration=CustomLoadBalancerConfiguration.class)**
 
+
+
+## Patrón de diseño: Edge Server (Spring Cloud Gateway)
+
+### API Gateway
+Carpeta del repo: **/api-gateway**
+
+Pasos de configuración:
+1. Agregar las dependencias:
+   - **spring-cloud-starter-openfeign**
+   - **spring-cloud-starter-netflix-eureka-client**
+   - spring-boot-starter-web (Opcional)
+
+2. Anotarlo como cliente de Eureka @EnableEurekaClient y configurarlo como cliente de Eureka.
+3. Configurar
