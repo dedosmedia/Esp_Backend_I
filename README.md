@@ -161,15 +161,33 @@ Puedes probar en: http://localhost:9501/mymmesage
 
 
 ### Balanceador de carga desde el cliente
-Carpeta del repo: **/feign-client**  (se agrega dentro el load balancer dentro de este MS)
+Carpeta del repo: **/feign-client**  (se agrega el load balancer dentro de este MS)
 
 Pasos de configuración:
 1. Agregar las dependencias:
    - **spring-cloud-starter-loadbalancer**
-2.  Anotar la aplicación con **@EnableDiscoveryClient** para habilitar el balanceo de carga desde este consumidor. (Debería también esar ya anotada con **@EnableFeignClients**)
-3. La app Feign-Client debería consumir un endpoint de otro MS, y si ese MS tiene 2 o más instancias, cada petición que haga Feign-Client debería ser contestada por las diferentes instancias del otro MS. Por defecto Feign usará Round-Robin.
-4. Para personalizar el modo de balancear las cargas creamos una clase /configuration/**CustomLoadBalancerConfiguration.java** y luego anotamos la interface con **@LoadBalancerClient( name="..." configuration=CustomLoadBalancerConfiguration.class)**
+2.  Anotar la aplicación con **@EnableDiscoveryClient** para habilitar el descubrimiento de instancias de los servicios requeridos. (Debería también esar ya anotada con **@EnableFeignClients**)
+3. Ya con esa configuración de los puntos anteriores la app Feign-Client podría consumir un endpoint de otro MS, y si ese MS tiene 2 o más instancias, cada petición que haga Feign-Client debería ser contestada por las diferentes instancias del otro MS. Por defecto Feign usará Round-Robin.
+4. Para personalizar el modo de balancear las cargas creamos una clase /configuration/**CustomLoadBalancerConfiguration.java** 
 
+> ```
+> public class CustomLoadBalancerConfiguration {
+>   @Bean
+>   ReactorLoadBalancer<ServiceInstance> randomLoadBalancer(Environment environmbet, LoadBalancerClientFactory loadBalancerClientFactory) {
+>     String name = environment.getProperty(LoadBalancerClientFactory.PROPERTY_NAME);
+>     return new RandomLoadBalancer(loadBlancerClientFactory.getLazyProvider(name, ServiceInstanceListSupplier.class),name);
+>   }
+> }
+> ```
+5. Anotar la interface del cliente de Feign con:
+> ```
+> @FeignClient(name="config-client")
+> @LoadBalancerClient( name="..." configuration=CustomLoadBalancerConfiguration.class)
+> public interface MessageClient { 
+>   ...
+> }
+> ```
+6. **Listo**, deberíamos tener un balanceador de carga desde el lado del cliente operando según CustomLoadBalancerConfiguration.java
 
 
 ## Patrón de diseño: Edge Server (Spring Cloud Gateway)
@@ -179,9 +197,35 @@ Carpeta del repo: **/api-gateway**
 
 Pasos de configuración:
 1. Agregar las dependencias:
-   - **spring-cloud-starter-openfeign**
+   - **spring-cloud-starter-gateway**
    - **spring-cloud-starter-netflix-eureka-client**
    - spring-boot-starter-web (Opcional)
+2. Configurar reglas de navegabilidad
+  application.yml
+> ```
+> server:
+>   port: 8891
+> 
+>  spring:
+>    cloud:
+>      gateway:
+>        default-filters: 
+>          - LogFilter   # Un filtro que se aplica a todas las peticiones al gateway
+>        routes:
+>          - id: rutaId  # Identificador de la ruta
+>            uri:  lb://nombre-ms  # o  http://localhost:8761, si no está balanceado
+>            predicates: # Reglas para saber si la request se enruta por esta ruta
+>            - Path=/product/**    # Si el path empieza por product, usa esta ruta
+>          - id: ruta2Id
+>            uri: lb://nombre-otro-ms
+>            predicates:    
+>            - Path=/users/**
+>            filters:
+>              - AddRequestHeader=nombre-de-header, valor de header   # PREFILTER
+>              - AddResponseHeader=nombre-de-header, valor de header  # POSTFILTER
+> ```
+3. Configurar filtros en cada ruta (o globalmente). 
+Pueden ser filtros ya provistos por Spring o creados por nosotros mismos. En el application.yaml anterior se agregaron filtros de Spring a la ruta /users/ (**filters:**). Hay filtros PreFilter y PostFilter. Un PreFilter filtra la request y un PostFilter filtra la response. Pueden haber filtros globales (**default-filters:**) que se aplican a todas las llamadas al API y no unicamente a una ruta particular.
+4. Crear filtros personalizados si se desea.
+En este caso se hacen clases que hereden de **AbstractGatewayFilterFactory** y sobreescribir el método **public GatewayFilter apply(Config config)**
 
-2. Anotarlo como cliente de Eureka @EnableEurekaClient y configurarlo como cliente de Eureka.
-3. Configurar
