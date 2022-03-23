@@ -6,8 +6,10 @@ Carpeta del repo: **/eureka-server**
 Pasos de configuración:
 1. Agregar las dependencias:
    - **spring-cloud-starter-netflix-eureka-server**
-   - spring-boot-starter-web (Opcional)
-   - spring-boot-starter-actuator (Opcional)
+   - **spring-cloud-starter-config** (Recomendado)
+   - spring-boot-starter-web (Recomendado)
+   - spring-boot-starter-actuator (Recomendado)
+   
 
 2. Anotar la clase principal con **@EnableEurekaServer**
 3. Configurar el servidor mediante las propiedades (application.properties o application.yaml según preferencias)
@@ -16,7 +18,7 @@ Pasos de configuración:
    application.yml
 > ```
 > server:
-> port: 8888
+> port: 8761
 >
 > eureka:
 >  client:
@@ -24,7 +26,7 @@ Pasos de configuración:
 >    fetch-registry: false   
 > ```
 
-4. **Ejecútalo y Listo!** Ahora puedes acceder al Dashboard en http://localhost:8888/
+4. **Ejecútalo y Listo!** Ahora puedes acceder al Dashboard en http://localhost:8761/
 
 
 ### Eureka Client
@@ -51,10 +53,10 @@ Pasos de configuración:
 > eureka:
 >   client:
 >     service-url:
->       defaultZone: http://localhost:8888/eureka/
+>       defaultZone: http://localhost:8761/eureka/
 > ```
 
-3. **Ejecútalo** (Debe estar corriendo Eureka Server) **y Listo!** Ahora puedes verificar en el Dashboard de Eureka Server como se registra tu MS en http://localhost:8888/
+3. **Ejecútalo** (Debe estar corriendo Eureka Server) **y Listo!** Ahora puedes verificar en el Dashboard de Eureka Server como se registra tu MS en http://localhost:8761/
 
 
 
@@ -66,18 +68,17 @@ Carpeta del repo: **/config-server**
 Pasos de configuración:
 1. Agregar las dependencias:
    - **spring-cloud-config-server**
-   - spring-boot-starter-web (Opcional)
+   - spring-boot-starter-web (Recomendando)
    - spring-boot-starter-actuator (Recomendado)
-   - spring-cloud-starter-netflix-eureka-client (Recomendado)
 
 2. Anotar la clase principal con **@EnableConfigServer**
 3. Configurar el servidor mediante las propiedades (application.properties o application.yaml según preferencias)
    En este caso le indicamos al Config Server desde que origen va a ir a buscar las configuraciones (en este caso github). Además configuramos el puerto donde se ejecutará.
-   
-   application.yml
+
+   application.yml  (configuración para trabajar congithub)
 > ```
 > server:
-> port: 8891
+> port: 8888
 > 
 > spring:
 >   application:
@@ -87,9 +88,23 @@ Pasos de configuración:
 >       server:
 >         git:
 >           uri: https://github.com/dedosmedia/spring-cloud-config-server-configuration
+>
+> ```
+    o usar application.yml (configuración extraida de disco)
+> ```
+> server:
+> port: 8888
+> 
+> spring:
+>   application:
+>     name: config-server
+>   cloud:
+>     config:
+>       native:
+>         searchLocations: classpath:/config
 > ```
 
-4. **Ejecútalo y Listo!** El servidor de configuraciones debería estar activo.
+1. **Ejecútalo y Listo!** El servidor de configuraciones debería estar activo.
 
 
 
@@ -112,7 +127,7 @@ Pasos de configuración:
 >   application:
 >     name: config-client
 >   config:
->     import: configserver:http://localhost:8891
+>     import: configserver:http://localhost:8888
 > ```
 
 3. Para probar que funcione creamos una clase */controller/TestController.java* anotada con @RestController y estamos sirviendo un enpdoint con @GetMapping("/message").  
