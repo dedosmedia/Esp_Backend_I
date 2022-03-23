@@ -1,5 +1,5 @@
 server:
-  port: 8891
+  port: 8888
 
 spring:
   application:
@@ -7,10 +7,7 @@ spring:
   cloud:
     config:
       server:
-        git:
-          uri: https://github.com/dedosmedia/spring-cloud-config-server-configuration
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8888/eureka/
+        # git:
+        #  uri: https://github.com/dedosmedia/spring-cloud-config-server-configuration
+        native:    #opcional si queremos trabajar la configuración local durante desarrollo
+          search-locations: classpath:/config

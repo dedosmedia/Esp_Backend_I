@@ -1,0 +1,20 @@
+# Aquí podría ir la configuración mientras trabajamos en desarrollo
+# este archivo particular lo heredan todos los MS (Configuramos actuator)
+# En esta carpeta se ponen los demás yml de los MS que queremos configurar particularmente
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'  # En producción no debería exponerse todo
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+    shutdown:
+      enabled: true   # Nunca se hace en producción
+  
+  # Info cambió en 2.6 y se configura por fuera de endpoint    
+  info:
+    env:
+      enabled: true
