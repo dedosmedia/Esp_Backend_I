@@ -1,0 +1,29 @@
+spring:
+  application:
+     name: service-registry
+  #  cloud:
+  #    config:
+  #      enabled: false   # para desactivar la dependencia de Config Client durante desarrollo y que tome la configuración local
+  config:
+    import: configserver:http://localhost:8888
+
+
+
+# Esta sería la configuración local, que se pasó posteriormente al Config Server, con nombre service-registry.yml
+
+# server:
+#   port: 8761
+
+# eureka:
+#   server:
+#     enableSelfPreservation: false # No se debe hacer en producción
+#   client:
+#     registerWithEureka: false
+#     fetchRegistry: false
+#     serviceUrl:
+#       defaultZone: http://localhost:8761/eureka/
+#   instance:
+#     preferIpAddress: true
+
+
+
