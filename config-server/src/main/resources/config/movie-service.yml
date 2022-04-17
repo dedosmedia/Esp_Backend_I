@@ -1,0 +1,17 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: movie-service
+  datasource:
+    driverClassName: org.h2.Driver
+    url: jdbc:h2:mem:db;DB_CLOSE_DELAY=-1
+    username: sa
+    password: sa
+  sql:
+    init:
+      dataLocations: classpath:/movie-service.sql
+  jpa:
+    deferDatasourceInitialization: true
+    hibernate:
+      ddlAuto: create-drop

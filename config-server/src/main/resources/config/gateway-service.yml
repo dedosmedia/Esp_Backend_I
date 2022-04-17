@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false   # Permite que el gateway descubra sus propias rutas basadas en los servicios registrados
+
+      routes:
+        - id: movie-service-route
+          predicates:
+            - Path=/movies/**
+          uri: lb://movie-service
+        - id: catalog-service-route
+          predicates:
+            - Path=/catalog/**
+          uri: lb://catalog-service
+
+
+server:
+  port: 8080
+

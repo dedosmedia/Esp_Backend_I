@@ -8,6 +8,6 @@ spring:
     config:
       server:
         # git:
-        #  uri: https://github.com/dedosmedia/spring-cloud-config-server-configuration
-        native:    #opcional si queremos trabajar la configuración local durante desarrollo
-          search-locations: classpath:/config
+        #  uri: https://github.com/dedosmedia/configuraciones.git
+        native:    #  Lo entrego en local, para evitar problemas...   sería quitar el perfil native y descomentar lo de arriba, eliminando lo de abajo
+          searchLocations: classpath:/config

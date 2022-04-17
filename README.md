@@ -1,85 +1,22 @@
-## Patrón de diseño: Service Registry/Service Discovery
-
-### Eureka Server
-Carpeta del repo: **/eureka-server**
-
-Pasos de configuración:
-1. Agregar las dependencias:
-   - **spring-cloud-starter-netflix-eureka-server**
-   - **spring-cloud-starter-config** (Recomendado)
-   - spring-boot-starter-web (Recomendado)
-   - spring-boot-starter-actuator (Recomendado)
-   
-
-2. Anotar la clase principal con **@EnableEurekaServer**
-3. Configurar el servidor mediante las propiedades (application.properties o application.yaml según preferencias)
-   En este caso le indicamos al Eureka Server, que no actúe como cliente al mismo tiempo. Además configuramos el puerto donde se ejecutará.
-   
-   application.yml
-> ```
-> server:
-> port: 8761
->
-> eureka:
->  client:
->    register-with-eureka: false
->    fetch-registry: false   
-> ```
-
-4. **Ejecútalo y Listo!** Ahora puedes acceder al Dashboard en http://localhost:8761/
-
-
-### Eureka Client
-Carpeta del repo: **/eureka-client**
-
-Pasos de configuración:
-1. Agregar las dependencias:
-   - **spring-cloud-starter-netflix-eureka-client**
-   - spring-boot-starter-web (Recomendado)
-   - spring-boot-starter-actuator (Recomendado)
-2. Agregar la anotación a nuestra clase principal **@EnableDiscoveryClient** que permite descubrir los clientes sin importar que implementación de Service Registry haya (Consult, Zookeeper, Eureka) (Hay otro equivalente que es **@EnableEurekaClient** pero esta solo funcionaría para descubrir servicios desde Eureka)
-3. Configurar nuestra aplicación mediante propiedades (application.properties o application.yaml según preferencias) para que pueda registrarse en el Eureka Server.
-   En este caso le indicamos la dirección donde conectar el Eureka Server. Además configuramos el puerto donde se ejecutará y el nombre que tendrá este microservicio al registrarse.
-   
-   application.yml
-> ```
-> server:
-> port: 9000
-> 
-> spring:
->   application:
->     name: eureka-client
-> 
-> eureka:
->   client:
->     service-url:
->       defaultZone: http://localhost:8761/eureka/
-> ```
-
-3. **Ejecútalo** (Debe estar corriendo Eureka Server) **y Listo!** Ahora puedes verificar en el Dashboard de Eureka Server como se registra tu MS en http://localhost:8761/
-
-
-
+___
 ## Patrón de diseño: Central Configuration
-
+___
 ### Config Server
 Carpeta del repo: **/config-server**
+Descripción: Es un servicio que se encargará de centralizar las configuraciones (application.yaml o application.properties) de  otros microservicios, y las servirá mediante endpoints (http://config-server/nombre-servicio/profile)
+
 
 Pasos de configuración:
 1. Agregar las dependencias:
    - **spring-cloud-config-server**
-   - spring-boot-starter-web (Recomendando)
    - spring-boot-starter-actuator (Recomendado)
 
 2. Anotar la clase principal con **@EnableConfigServer**
-3. Configurar el servidor mediante las propiedades (application.properties o application.yaml según preferencias)
-   En este caso le indicamos al Config Server desde que origen va a ir a buscar las configuraciones (en este caso github). Además configuramos el puerto donde se ejecutará.
+3. Configurar el servidor mediante el archivo de configuración local (application.properties o application.yaml según preferencias)
+   En este caso le indicamos al Config Server desde que origen va a ir a buscar las configuraciones (spring.cluod.config.server.git).
 
-   application.yml  (configuración para trabajar congithub)
+   application.yml  (configuración para trabajar con github)
 > ```
-> server:
-> port: 8888
-> 
 > spring:
 >   application:
 >     name: config-server
@@ -89,37 +26,35 @@ Pasos de configuración:
 >         git:
 >           uri: https://github.com/dedosmedia/spring-cloud-config-server-configuration
 >
+o alternativamente este  application.yml para configuración desde disco
 > ```
-    o usar application.yml (configuración extraida de disco)
-> ```
-> server:
-> port: 8888
-> 
 > spring:
 >   application:
 >     name: config-server
+>   profile:
+>     active: native
+> 
 >   cloud:
 >     config:
 >       native:
->         searchLocations: classpath:/config
+>         searchLocations: classpath:/config    # Subcarpeta dentro de resources
 > ```
-
-1. **Ejecútalo y Listo!** El servidor de configuraciones debería estar activo.
-
+4. En el servidor de configuraciones crearemos un .yml por cada servicio que queramos configurar y debe tener el mismo nombre que tenga spring.application.name en cada microservicio
+   **Nota:** Nunca agregar spring.config.import en estos .yml, esta parte solo se pone en el application.yml local de cada microservicio.
+5. **Ejecútalo y Listo!** El servidor de configuraciones debería estar activo y puede servir configuraciones para otros MS.
 
 
 ### Config Client
 Carpeta del repo: **/config-client**
+Descripción: Cualquier servicio que quiera obtener sus configuraciones desde el servidor central debe implementar lo descrito en los siguientes pasos
 
 Pasos de configuración:
 1. Agregar las dependencias:
    - **spring-cloud-starter-config**
-   - spring-boot-starter-web (Opcional)
    - spring-boot-starter-actuator (Recomendado)
-   - spring-cloud-starter-netflix-eureka-client (Recomendado)
+   
 2. Configurar el cliente mediante las propiedades (application.properties o application.yaml según preferencias) para indicarle de dónde obtener las configuraciones.
-   En este caso le indicamos al Config Client que las tome desde el servidor de configuraciones, pasandole la url. No configuramos el puerto donde se ejecutará porque se configurará dinámicamente desde el yml.
-   Agregamos también el nombre del microservicio, este último es muy importante porque así mismo es el nombre del archivo yml que intentará obtener del servidor de configuraciones.
+   En este caso le indicamos al Config Client que las tome desde el servidor de configuraciones pasandole su url (spring.config.import). Agregamos también el nombre del microservicio, este último es muy importante porque así mismo es el nombre del archivo yml que intentará obtener del servidor de configuraciones. La palabra optional: permite que el servidor levante a pesar de no llegar a encontrar el servidor de configuraciones (en ese caso se configurará unicamente con la configuración local o valroes default).
    
    application.yml
 > ```
@@ -127,25 +62,97 @@ Pasos de configuración:
 >   application:
 >     name: config-client
 >   config:
->     import: configserver:http://localhost:8888
+>     import: optional:configserver:http://localhost:8888
 > ```
+3. **Ejecútalo** (Debe estar corriendo el Config Server primero) **y Listo!** El cliente debería estar corriendo y haber tomado la configuración del yml proporcionado por el servidor de configuraciones.
 
-3. Para probar que funcione creamos una clase */controller/TestController.java* anotada con @RestController y estamos sirviendo un enpdoint con @GetMapping("/message").  
-Mediante la anotación @Value("${message}") podemos imprimir dicha variable y confirmar que es el valor configurado en el yml de Github.
+___
+## Patrón de diseño: Service Registry/Service Discovery
+___
 
-4. **Ejecútalo** (Debe estar corriendo Config Server) **y Listo!** El cliente debería estar corriendo y haber tomado la configuración del yml como estaba en Github.
+### Eureka Server
+Carpeta del repo: **/eureka-server**
 
-
-## Comunicación entre microservicios (Spring Cloud OpenFeign)
-
-### Feign Client
-Carpeta del repo: **/feign-client**
+Descripción: Es un servicio que se encargará de mantener un registro de todos los microservicios de nuestro ecosistema, así mismo permitirá ser consultado para el descubrimiento de servicios por parte de aquellos MS que lo requieran consultar.
 
 Pasos de configuración:
 1. Agregar las dependencias:
-   - **spring-cloud-starter-openfeign**
+   - **spring-cloud-starter-netflix-eureka-server**
+   - **spring-cloud-starter-config** (Opcional, si este MS se va a configurar trayendo la configuración del servidor de configuraciones)
+   - spring-boot-starter-actuator (Recomendado)
+   
+2. Anotar la clase principal con **@EnableEurekaServer**
+3. Configurar el servidor mediante las propiedades (application.properties o application.yaml según preferencias)
+   En este caso le indicamos al Eureka Server, que no actúe como cliente al mismo tiempo. Además configuramos el puerto donde se ejecutará.
+   
+   application.yml
+> ```
+> spring:
+>   application:
+>     name: service-registry
+> server:
+> port: 8761
+>
+> eureka:
+>  client:
+>    register-with-eureka: false
+>    fetch-registry: false   
+>    service-url:
+>      defaultZone: http://localhost:8761/eureka
+>   server:
+>     enableSelfPreservation: false # No se debe hacer en producción
+>   instance:
+>     preferIpAddress: true
+> ```
+
+4. **Ejecútalo y Listo!** Ahora puedes acceder al Dashboard en http://localhost:8761/
+
+
+### Eureka Client
+Carpeta del repo: **/eureka-client**
+Descripción: Cualquier microservicio del ecosistema que quiera ser registrado en Eureka, para su posterior descubrimiento, debería implementar lo siguiente:
+
+Pasos de configuración:
+1. Agregar las dependencias:
    - **spring-cloud-starter-netflix-eureka-client**
-   - spring-boot-starter-web (Opcional)
+   - **spring-cloud-starter-config** (Opcional, si este MS se va a configurar trayendo la configuración del servidor de configuraciones)
+   - spring-boot-starter-actuator (Recomendado)
+      
+2. Agregar la anotación a nuestra clase principal **@EnableDiscoveryClient** que permite descubrir los clientes sin importar que implementación de Service Registry se esté ejecutando (Consult, Zookeeper, Eureka) (Hay otro equivalente que es **@EnableEurekaClient** pero esta solo funcionaría para descubrir servicios desde Eureka)
+3. Configurar nuestra aplicación mediante propiedades (application.properties o application.yaml según preferencias) para que pueda registrarse en el Eureka Server.
+   En este caso le indicamos la dirección donde conectar el Eureka Server. Además configuramos el puerto donde se ejecutará y el nombre que tendrá este microservicio al registrarse.
+   
+   application.yml
+> ```
+> server:
+>   port: 9000
+> 
+> spring:
+>   application:
+>     name: eureka-client
+> 
+> eureka:
+>   client:
+>     register-with-eureka: true
+>     fetch-registry: true
+>     service-url:
+>       defaultZone: http://localhost:8761/eureka/
+> ```
+
+3. **Ejecútalo** (Debe estar corriendo Eureka Server) **y Listo!** Ahora puedes verificar en el Dashboard de Eureka Server como se registra tu MS en http://localhost:8761/
+
+___
+## Comunicación entre microservicios (Spring Cloud OpenFeign)
+___
+
+### Feign Client
+Carpeta del repo: **/feign-client**
+Descripción: Se usa para permitir la comunicación directa entre microservicios, es decir que puedan consumir la API que expongan. 
+
+Pasos de configuración (En el microservicio que va a consumir la API):
+1. Agregar las dependencias:
+   - **spring-cloud-starter-openfeign**
+   - **spring-cloud-starter-netflix-eureka-client** (Necesario si queremos invocar otros microservicios solo por su nombre, sin saber IP ni puerto)
    - spring-boot-starter-actuator (Recomendado)
 2. Anotar la clase principal con **@EnableFeignClients**
 3. Crear las interfaces de Feign, anotarlas con **@FeignClient(name='...')**
@@ -157,7 +164,9 @@ Pasos de configuración:
 >   }
 >   ```
 4. Hacer uso del cliente de Feign inyectandolo donde necesitemos hacer el llamado al API.
+
 >   ```
+>   // ProductService.java
 >   @Service
 >   public class ProductService {
 >
@@ -170,12 +179,13 @@ Pasos de configuración:
 >   }
 >   ```
 
-5. Se ha creado un MessageService donde se inyecta el Cliente. Luego se ha creado un MessageController donde se inyecta el MessageService. Ese controller expone un endpoint /mymessage que internamente usa el cliente de feign para consumir el endpoint de otro microservicio (config-client en este caso)
-6. **Listo!** Ahora este microservicio ya puede consumir el endpoint del otro microservicio del ecosistema sin conocer si quiera su ubicación, unicamente necesitamos el nombre del MS.
-Puedes probar en: http://localhost:9501/mymmesage
+5. Crear un controller ProductController donde se inyecte el ProductService. Ese controller expone un endpoint /mymessage que internamente usa el cliente de feign para consumir un recurso de otro microservicio.
+2. **Listo!** Ahora este microservicio ya puede consumir el endpoint del otro microservicio del ecosistema sin conocer si quiera su ubicación, unicamente necesitamos el nombre del MS.
 
-
+___
 ### Balanceador de carga desde el cliente
+___
+
 Carpeta del repo: **/feign-client**  (se agrega el load balancer dentro de este MS)
 
 Pasos de configuración:
@@ -204,8 +214,9 @@ Pasos de configuración:
 > ```
 6. **Listo**, deberíamos tener un balanceador de carga desde el lado del cliente operando según CustomLoadBalancerConfiguration.java
 
-
+___
 ## Patrón de diseño: Edge Server (Spring Cloud Gateway)
+___
 
 ### API Gateway
 Carpeta del repo: **/api-gateway**
@@ -213,13 +224,16 @@ Carpeta del repo: **/api-gateway**
 Pasos de configuración:
 1. Agregar las dependencias:
    - **spring-cloud-starter-gateway**
-   - **spring-cloud-starter-netflix-eureka-client**
-   - spring-boot-starter-web (Opcional)
+   - **spring-cloud-starter-netflix-eureka-client**  (Para service discovery)
+   - **spring-cloud-starter-config**  (Para ser un config client)
+   
+   Nota: **Nunca** importar la dependencia spring-boot-starter-web en Gateway. Es incorrecto, Gateway se hizo con Spring webflux.
+
 2. Configurar reglas de navegabilidad
   application.yml
 > ```
 > server:
->   port: 8891
+>   port: 8080
 > 
 >  spring:
 >    cloud:
@@ -240,7 +254,141 @@ Pasos de configuración:
 >              - AddResponseHeader=nombre-de-header, valor de header  # POSTFILTER
 > ```
 3. Configurar filtros en cada ruta (o globalmente). 
-Pueden ser filtros ya provistos por Spring o creados por nosotros mismos. En el application.yaml anterior se agregaron filtros de Spring a la ruta /users/ (**filters:**). Hay filtros PreFilter y PostFilter. Un PreFilter filtra la request y un PostFilter filtra la response. Pueden haber filtros globales (**default-filters:**) que se aplican a todas las llamadas al API y no unicamente a una ruta particular.
+Pueden ser filtros ya provistos por Spring o creados por nosotros mismos. En el application.yaml anterior se agregaron filtros de Spring a la ruta /users/. Hay filtros PreFilter y PostFilter. Un PreFilter filtra la request y un PostFilter filtra la response. Pueden haber filtros globales **default-filters:** que se aplican a todas las llamadas al API y no unicamente a una ruta particular.
 4. Crear filtros personalizados si se desea.
 En este caso se hacen clases que hereden de **AbstractGatewayFilterFactory** y sobreescribir el método **public GatewayFilter apply(Config config)**
+
+___
+## Spring Security
+___
+
+La seguridad se puede implementar a nivel del microservicio o directamente desde el API Gateway, aquí se explicará seguridad desde el Gateway mediante autenticación por medio de oAuth2.
+Pasos de configuración:
+1. Agregar las dependencias (en el gateway):
+   - **spring-boot-starter-oauth2-client** (Para autenticación mediante oauth)
+2. Configurar un default-filter en el application.yml.  Será un **TokenRelay** que se encargará de pasar el Header de Auhorization, desde el Gateway y hacía los microservicios, para que ellos puedan usar el JWT para verificarlo contra el Authentication Server de oAuth2
+> ```
+> spring:
+>   cloud:
+>     gateway:
+>       default-filters: 
+>         - TokenRelay
+> ```
+3. Configurar el cliente de oAuth en application.yml
+> ```
+> security:
+>     oauth2:
+>       client:
+>         registration:
+>           google:
+>             client-id: [CLIENT ID GENERADO EN EL AUTH PROVIDER]
+>             client-secret: [SECRET GENERADO EN EL AUTH PROVIDER]
+>             scope: openid,profile,email
+>             redirect-uri: http://localhost:8080/login/oauth2/code/google
+>         provider:
+>           google:
+>             issuer-uri: https://accounts.google.com
+> ```
+4. Crear una clase de configuración en el Gateway, donde se configure todo el tema de seguridad, que rutas no necesitan estar autenticadas, cuales sí, y demás configuraciones del security. Se debe crear un @Bean.
+En este caso habilitamos que se pueda hacer login mediante oAuth2, que se pueda hacer logout, que cualquier petición deba ser autenticada, y se deshabilita cors.
+(Notese que en Gateway se habla de Exchanges en lugar de Requests, Gateway usa Spring Webflux y no Spring Web, por lo tanto la configuración es un poco diferente a la de asgurar un microservicio sin gateway)
+> ```
+> @Configuration
+> public class SecurityConfiguration {
+>     @Bean
+>     SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, ReactiveClientRegistrationRepository client) throws Exception {
+>         http.oauth2Login();
+>         http.logout(logoutSpec -> logoutSpec.logoutSuccessHandler(
+>                 new OidcClientInitiatedServerLogoutSuccessHandler(client)
+>         ));
+>         http.authorizeExchange().anyExchange().authenticated();
+>         http.cors().disable();
+>         return http.build();
+>     }
+> }
+> ```
+5. **Listo!** Con esta configuración el Gateway ya debería estar enviando una Header hacia los microservicios con el JWT de Authorization.
+**Nota**: En el caso de google, la configuración es un poco más compleja y requiere de otras clases adicionales. Por simplicidad no se muestra aquí.
+
+6. En caso que el MS que recibe la petición desde Gateway, requiera comunicarse con otro MS usando Feign, será necesario también enviarle ese JWT, para lo cual sería necesario agregar una configuración para el Feign. Este clase intercepta la petición, extrae el Header de Authorization y lo inyecta en la petición que hace el Feign al otro MS.
+> ```
+> 
+> public class FeignConfiguration {
+>     private static final Pattern BEARER_TOKEN_HEADER_PATTERN = Pattern.compile("^Bearer (?<token>[a-zA-Z0-9-._~+/]+=*)$", Pattern.CASE_INSENSITIVE);
+>     @Bean
+>     public RequestInterceptor requestInterceptor() {
+>         return requestTemplate -> {
+>             final String authorization = HttpHeaders.AUTHORIZATION;
+>             ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+>             if (Objects.nonNull(requestAttributes)) {
+>                 String authorizationHeader = requestAttributes.getRequest().getHeader(HttpHeaders.AUTHORIZATION);
+>                 Matcher matcher = BEARER_TOKEN_HEADER_PATTERN.matcher(authorizationHeader);
+>                 if (matcher.matches()) {
+>                     //  Clear token Head   Avoid contagion
+>                     requestTemplate.header(authorization);
+>                     requestTemplate.header(authorization, authorizationHeader);
+>                 }
+>             }
+>         };
+>     }
+> }
+> ```
+La configuración de la interface de Feign quedaría así:
+> ```
+> 
+> @FeignClient( name = "serie-service", configuration = {FeignConfiguration.class })
+> public interface SerieRepository {
+>     /*
+>     El @PathVariable fue obligatorio, en caso contrario el Feign me estaba pasando la petición GET como POST
+>     al otro microservicio y rompía..
+>      */
+>     @GetMapping("/series/{genre}")
+>     ResponseEntity<List<Serie>> findByGenre(@PathVariable String genre);
+> }
+> ```
+
+___
+## Patrón de diseño: Circuit Breaker (Resielience4J)
+___
+### Módulo Circuit Breaker / Retry
+Carpeta del repo: **/feign-client**
+
+Pasos de configuración:
+1. Agregar las dependencias:
+   - **spring-cloud-starter-circuitbreaker-resilience4j**  (Para circuit breaker)
+2. Configurar instancias del circuit breaker en el 
+  application.yml
+> ```
+> resilience4j
+>   circuitbreaker:
+>     instances:
+>        backendA:
+>          registerHealthIndicator: true
+>          slidingWindowSize: 10
+>          permittedNumberOfCallsInHalfOpenState: 3
+>          slidingWindowType: COUNT_BASED
+>           ...
+>   retry:
+>     instances:
+>       backendA:
+>         maxAttempts: 3
+>         waitDuration: 10000
+>         retryExceptions:
+>           - feign.FeignException$InternalServerError
+> ```
+3. Agregar la anotación @CircuitBreaker y @Retry en el método que hace uso del feign para la llamada a otro microservicio.
+> ```   
+> @CircuitBreaker( name = 'backendA', fallbackMethod = 'metodoFallback')
+> @Retry ( name = 'backendA')
+> public function servicioA() {
+> ...
+> }
+>
+> private void metodoFallback(CallNotPermittedException ex) throws UnaExcepcionCustom {
+>  throw new UnaExceptionCustom("Se activó el circuit breaker");
+> }
+>
+> ```
+
+
 

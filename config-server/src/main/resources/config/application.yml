@@ -1,6 +1,4 @@
-# Aquí podría ir la configuración mientras trabajamos en desarrollo
-# este archivo particular lo heredan todos los MS (Configuramos actuator)
-# En esta carpeta se ponen los demás yml de los MS que queremos configurar particularmente
+# este archivo particular lo heredan todos los MS
 
 management:
   endpoints:
@@ -18,3 +16,13 @@ management:
   info:
     env:
       enabled: true
+
+# Todos serán Eureka Client
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    preferIpAddress: true
