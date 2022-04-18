@@ -307,10 +307,40 @@ En este caso habilitamos que se pueda hacer login mediante oAuth2, que se pueda 
 >     }
 > }
 > ```
-5. **Listo!** Con esta configuración el Gateway ya debería estar enviando una Header hacia los microservicios con el JWT de Authorization.
+5. En el microservicio que recibe la petición del Gateway.
+   Se deben agregar las siguientes dependencias:
+   **spring-boot-starter-oauth2-client**
+   **spring-security-oauth2-jose**
+   **spring-boot-starter-oauth2-resource-server**
+   **spring-boot-starter-security**
+También se debe configurar el application.yml indicandole que éste actuará como un servidor de recursos y en que provider puede verificar el JWT.
+> ```
+>  spring:
+>    security:
+>     oauth2:
+>       resourceserver:
+>         jwt:
+>           issuer-uri: https://accounts.google.com
+> ```
+6. Por último es necesario que este microservicio configure la seguridad, con una clase de configuración, indicandole que todas las peticiones deben estar autenticadas y que funcionará como un ResourceServer con JWT.
+> ```@EnableWebSecurity
+> public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+>     @Override
+>     protected void configure(HttpSecurity http) throws Exception {
+>         http.
+>                 authorizeRequests()
+>                 .anyRequest().authenticated()
+>                 .and()
+>                 .oauth2ResourceServer()
+>                 .jwt();
+>     }
+> }
+> ```
+
+7. **Listo!** Con esta configuración el Gateway ya debería estar enviando una Header hacia los microservicios con el JWT de Authorization.
 **Nota**: En el caso de google, la configuración es un poco más compleja y requiere de otras clases adicionales. Por simplicidad no se muestra aquí.
 
-6. En caso que el MS que recibe la petición desde Gateway, requiera comunicarse con otro MS usando Feign, será necesario también enviarle ese JWT, para lo cual sería necesario agregar una configuración para el Feign. Este clase intercepta la petición, extrae el Header de Authorization y lo inyecta en la petición que hace el Feign al otro MS.
+7. En caso que el MS que recibe la petición desde Gateway, requiera comunicarse con otro MS usando Feign, será necesario también enviarle ese JWT, para lo cual sería necesario agregar una configuración para el Feign. Este clase intercepta la petición, extrae el Header de Authorization y lo inyecta en la petición que hace el Feign al otro MS.
 > ```
 > 
 > public class FeignConfiguration {
@@ -357,17 +387,20 @@ Pasos de configuración:
 1. Agregar las dependencias:
    - **spring-cloud-starter-circuitbreaker-resilience4j**  (Para circuit breaker)
 2. Configurar instancias del circuit breaker en el 
-  application.yml
+  application.yml, y también las instancias del Retry
 > ```
 > resilience4j
 >   circuitbreaker:
 >     instances:
 >        backendA:
->          registerHealthIndicator: true
->          slidingWindowSize: 10
->          permittedNumberOfCallsInHalfOpenState: 3
->          slidingWindowType: COUNT_BASED
->           ...
+>          sliding-window-type: COUNT_BASED
+>          sliding-window-size: 5
+>          failure-rate-threshold: 50
+>          wait-duration-in-open-state: 15s
+>          permitted-number-of-calls-in-half-open-state: 3
+>          register-health-indicator: true
+>          allow-health-indicator-to-fail: false
+>          automatic-transition-from-open-to-half-open-enabled: true
 >   retry:
 >     instances:
 >       backendA:
@@ -380,12 +413,12 @@ Pasos de configuración:
 > ```   
 > @CircuitBreaker( name = 'backendA', fallbackMethod = 'metodoFallback')
 > @Retry ( name = 'backendA')
-> public function servicioA() {
-> ...
+> public function servicioA(String abc) {
+>   ... // en este método es donde se usar el repository que invoca el API del otro servicio
 > }
 >
-> private void metodoFallback(CallNotPermittedException ex) throws UnaExcepcionCustom {
->  throw new UnaExceptionCustom("Se activó el circuit breaker");
+> private void metodoFallback(String abc, CallNotPermittedException ex) {
+>   log.info("Se llama al fallback... aquí la lógica de fallback");
 > }
 >
 > ```
